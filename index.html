@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contratos — Controle de Vigências | DLOG/PROAD/UFG</title>
+<style>
+ *{box-sizing:border-box}
+ body{font-family:Verdana,Geneva,Arial,sans-serif;background:#fff;margin:0;color:#222;font-size:12px}
+ .topo{background:#00447c;color:#fff;padding:10px 18px;border-bottom:4px solid #ffb612}
+ .topo h1{font-size:15px;margin:0;font-weight:bold}
+ .topo .sub{font-size:11px;color:#cfe0ef;margin-top:2px}
+ .conteudo{padding:14px 18px}
+ .info{font-size:11px;color:#555;margin-bottom:10px}
+ table.resumo{border-collapse:collapse;margin-bottom:14px}
+ table.resumo th,table.resumo td{border:1px solid #b7c3cd;padding:5px 12px;font-size:12px;text-align:center}
+ table.resumo th{background:#e8eef3;font-weight:bold;color:#00447c}
+ table.resumo td.qtd{font-size:16px;font-weight:bold}
+ table.resumo td.clic{cursor:pointer}
+ table.resumo td.clic:hover{background:#f2f7fb}
+ table.resumo td.sel{background:#fff3cd}
+ .sq{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px;border:1px solid #888}
+ .sq.c{background:#c0392b}.sq.a{background:#e6a817}.sq.r{background:#2e7d32}
+ fieldset{border:1px solid #b7c3cd;padding:10px 12px;margin:0 0 14px}
+ legend{font-size:11px;font-weight:bold;color:#00447c;padding:0 6px}
+ .linha-f{display:flex;flex-wrap:wrap;gap:14px;align-items:end}
+ .linha-f label{display:block;font-size:11px;margin-bottom:2px}
+ .linha-f input,.linha-f select{padding:4px 6px;border:1px solid #8ba0b3;font-size:12px;font-family:inherit}
+ .linha-f input[type=text]{width:280px}
+ button{padding:5px 12px;border:1px solid #8ba0b3;background:#e8eef3;font-size:12px;cursor:pointer;font-family:inherit}
+ button:hover{background:#d8e4ee}
+ button.acao{background:#00447c;color:#fff;border-color:#00447c}
+ .barra{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px;color:#333}
+ table.lista{border-collapse:collapse;width:100%}
+ table.lista th{background:#00447c;color:#fff;padding:5px 7px;text-align:left;font-size:11px;white-space:nowrap;cursor:pointer;border:1px solid #003156}
+ table.lista th:hover{background:#005a9e}
+ table.lista td{padding:4px 7px;border:1px solid #d4dde4;font-size:11.5px;vertical-align:top}
+ table.lista tr:nth-child(even) td{background:#f4f7fa}
+ td.num{text-align:right;white-space:nowrap}
+ td.st{white-space:nowrap;font-weight:bold;font-size:10.5px}
+ .st-c{color:#a02318}.st-a{color:#9a6d00}.st-r{color:#20621f}
+ .fund{color:#555;font-size:10px}
+ .pag{margin-top:8px;font-size:11px;display:flex;gap:8px;align-items:center}
+ .rodape{margin-top:16px;border-top:1px solid #b7c3cd;padding-top:8px;font-size:10.5px;color:#666;line-height:1.5}
+</style></head><body>
+
+<div class="topo">
+ <h1>Controle de Vigências Contratuais — UG 153052</h1>
+ <div class="sub">Diretoria de Logística / Pró-Reitoria de Administração e Finanças — Universidade Federal de Goiás</div>
+</div>
+
+<div class="conteudo">
+<div class="info">Fonte: API de Dados Abertos Compras.gov.br — órgão 26235 · Vigências finais nos próximos 24 meses · Posição em <span id="posicao">—</span> · Clique nas células do quadro-resumo para filtrar; clique nos títulos das colunas para ordenar.</div>
+
+<table class="resumo">
+ <tr>
+  <th>Total monitorado</th>
+  <th><span class="sq c"></span>Crítico (≤180 dias)</th>
+  <th><span class="sq a"></span>Atenção (181–365)</th>
+  <th><span class="sq r"></span>Regular (&gt;365)</th>
+  <th>Vencem ≤30 dias</th>
+  <th>Vencem ≤60 dias</th>
+ </tr>
+ <tr>
+  <td class="qtd clic sel" data-faixa="todas" id="c-tot">–</td>
+  <td class="qtd clic" data-faixa="verm" id="c-verm">–</td>
+  <td class="qtd clic" data-faixa="amar" id="c-amar">–</td>
+  <td class="qtd clic" data-faixa="verd" id="c-verd">–</td>
+  <td class="qtd clic" data-faixa="30d" id="c-30">–</td>
+  <td class="qtd clic" data-faixa="60d" id="c-60">–</td>
+ </tr>
+ <tr>
+  <td id="v-tot">–</td><td id="v-verm">–</td><td id="v-amar">–</td>
+  <td id="v-verd">–</td><td id="v-30">–</td><td id="v-60">–</td>
+ </tr>
+</table>
+
+<fieldset><legend>Filtros</legend>
+<div class="linha-f">
+ <div><label>Pesquisa (fornecedor, objeto, nº contrato, processo)</label>
+  <input type="text" id="f-busca"></div>
+ <div><label>Vence até</label>
+  <select id="f-dias"><option value="">—</option><option value="30">30 dias</option>
+  <option value="60">60 dias</option><option value="90">90 dias</option>
+  <option value="180">180 dias</option><option value="365">365 dias</option></select></div>
+ <div><label>Mês de vencimento</label><select id="f-mes"><option value="">todos</option></select></div>
+ <div><label>Contratada</label>
+  <select id="f-tipo"><option value="">todas</option><option value="0">Mercado</option>
+  <option value="1">Fundação de apoio</option></select></div>
+ <div><label>Valor global mínimo</label>
+  <select id="f-valor"><option value="">—</option><option value="100000">R$ 100.000</option>
+  <option value="500000">R$ 500.000</option><option value="1000000">R$ 1.000.000</option>
+  <option value="5000000">R$ 5.000.000</option></select></div>
+ <button id="f-limpar">Limpar</button>
+ <button class="acao" id="f-csv">Exportar CSV</button>
+</div>
+</fieldset>
+
+<div class="barra">
+ <span id="resumo"></span>
+ <span class="pag">
+  <button id="p-ant">&#9664;</button><span id="p-info"></span><button id="p-prox">&#9654;</button>
+  <select id="p-tam"><option>50</option><option>100</option><option value="99999">todos</option></select> por página
+ </span>
+</div>
+
+<table class="lista">
+ <thead><tr>
+  <th data-c="d">Dias</th><th data-c="faixa">Situação</th><th data-c="n">Contrato</th>
+  <th data-c="fim">Fim vigência</th><th data-c="f">Contratada</th><th data-c="o">Objeto</th>
+  <th data-c="v">Valor global (R$)</th><th data-c="p">Processo</th>
+ </tr></thead>
+ <tbody id="corpo"></tbody>
+</table>
+
+<div class="rodape">
+<b>Notas:</b> (1) Valor global = valor total contratado, não o saldo remanescente nem o valor executado. (2) Contratos com fundações de apoio (FUNAPE, RTVE, FUNDAHC e congêneres) seguem rito próprio de renovação e estão identificados na coluna Contratada. (3) Contratos formalizados fora do Compras.gov.br não constam desta base. (4) A existência de aditivo em tramitação não é informada pela fonte — verificação junto ao gestor do contrato.
+</div>
+</div>
+
+<script>
+let DADOS = [];
+let GERADO_EM = "";
+const MESES={"01":"jan","02":"fev","03":"mar","04":"abr","05":"mai","06":"jun","07":"jul","08":"ago","09":"set","10":"out","11":"nov","12":"dez"};
+let faixaAtiva="todas", ordCol="d", ordAsc=true, pagina=1;
+const $=id=>document.getElementById(id);
+const brl=v=>v.toLocaleString("pt-BR",{maximumFractionDigits:0});
+const dbr=s=>s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4);
+const faixaDe=d=>d<=180?"verm":(d<=365?"amar":"verd");
+const rotulo={verm:["CRÍTICO","st-c"],amar:["ATENÇÃO","st-a"],verd:["REGULAR","st-r"]};
+
+(()=>{const ms=[...new Set(DADOS.map(c=>c.fim.slice(0,7)))].sort();
+ for(const m of ms){const o=document.createElement("option");o.value=m;
+  o.textContent=MESES[m.slice(5)]+"/"+m.slice(2,4)+" ("+DADOS.filter(c=>c.fim.startsWith(m)).length+")";
+  $("f-mes").appendChild(o);}})();
+
+function filtrar(){
+ const q=$("f-busca").value.trim().toLowerCase();
+ const dmax=$("f-dias").value?+$("f-dias").value:null;
+ const mes=$("f-mes").value, tipo=$("f-tipo").value;
+ const vmin=$("f-valor").value?+$("f-valor").value:null;
+ return DADOS.filter(c=>{
+  if(faixaAtiva==="verm"&&c.d>180)return false;
+  if(faixaAtiva==="amar"&&(c.d<=180||c.d>365))return false;
+  if(faixaAtiva==="verd"&&c.d<=365)return false;
+  if(faixaAtiva==="30d"&&c.d>30)return false;
+  if(faixaAtiva==="60d"&&c.d>60)return false;
+  if(dmax!==null&&c.d>dmax)return false;
+  if(mes&&!c.fim.startsWith(mes))return false;
+  if(tipo!==""&&String(c.fund)!==tipo)return false;
+  if(vmin!==null&&c.v<vmin)return false;
+  if(q&&!(c.f.toLowerCase().includes(q)||c.o.toLowerCase().includes(q)||c.n.toLowerCase().includes(q)||c.p.toLowerCase().includes(q)))return false;
+  return true;});
+}
+
+function render(){
+ let r=filtrar();
+ r.sort((a,b)=>{let x=a[ordCol],y=b[ordCol];
+  if(ordCol==="faixa"){x=a.d;y=b.d}
+  if(typeof x==="string"){x=x.toLowerCase();y=y.toLowerCase()}
+  return (x<y?-1:x>y?1:0)*(ordAsc?1:-1);});
+ const tam=+$("p-tam").value, tot=r.length, pags=Math.max(1,Math.ceil(tot/tam));
+ if(pagina>pags)pagina=pags;
+ const fatia=r.slice((pagina-1)*tam,(pagina-1)*tam+tam);
+ $("corpo").innerHTML=fatia.map(c=>{
+  const fx=faixaDe(c.d), [rt,cl]=rotulo[fx];
+  return `<tr><td class="num">${c.d}</td><td class="st ${cl}">${rt}</td>`+
+   `<td>${c.n}</td><td>${dbr(c.fim)}</td>`+
+   `<td>${c.f}${c.fund?' <span class="fund">[fundação]</span>':''}</td>`+
+   `<td>${c.o}</td><td class="num">${brl(c.v)}</td><td>${c.p}</td></tr>`;}).join("");
+ const soma=r.reduce((s,c)=>s+c.v,0);
+ $("resumo").textContent=`${tot} contrato(s) no filtro — valor global somado: R$ ${brl(soma)}`;
+ $("p-info").textContent=`pág. ${pagina}/${pags}`;
+ const kv=f=>DADOS.filter(c=>faixaDe(c.d)===f);
+ const d30=DADOS.filter(c=>c.d<=30), d60=DADOS.filter(c=>c.d<=60);
+ $("c-tot").textContent=DADOS.length; $("v-tot").textContent="R$ "+brl(DADOS.reduce((s,c)=>s+c.v,0));
+ $("c-verm").textContent=kv("verm").length; $("v-verm").textContent="R$ "+brl(kv("verm").reduce((s,c)=>s+c.v,0));
+ $("c-amar").textContent=kv("amar").length; $("v-amar").textContent="R$ "+brl(kv("amar").reduce((s,c)=>s+c.v,0));
+ $("c-verd").textContent=kv("verd").length; $("v-verd").textContent="R$ "+brl(kv("verd").reduce((s,c)=>s+c.v,0));
+ $("c-30").textContent=d30.length; $("v-30").textContent="R$ "+brl(d30.reduce((s,c)=>s+c.v,0));
+ $("c-60").textContent=d60.length; $("v-60").textContent="R$ "+brl(d60.reduce((s,c)=>s+c.v,0));
+}
+
+document.querySelectorAll("td.clic").forEach(k=>k.onclick=()=>{
+ document.querySelectorAll("td.clic").forEach(x=>x.classList.remove("sel"));
+ k.classList.add("sel"); faixaAtiva=k.dataset.faixa; pagina=1; render();});
+["f-busca","f-dias","f-mes","f-tipo","f-valor","p-tam"].forEach(id=>
+ $(id).addEventListener("input",()=>{pagina=1;render();}));
+$("f-limpar").onclick=()=>{["f-busca","f-dias","f-mes","f-tipo","f-valor"].forEach(id=>$(id).value="");
+ faixaAtiva="todas";document.querySelectorAll("td.clic").forEach(x=>x.classList.remove("sel"));
+ $("c-tot").classList.add("sel");pagina=1;render();};
+$("p-ant").onclick=()=>{if(pagina>1){pagina--;render();}};
+$("p-prox").onclick=()=>{pagina++;render();};
+document.querySelectorAll("table.lista th").forEach(th=>th.onclick=()=>{
+ const c=th.dataset.c;if(!c)return;
+ if(ordCol===c)ordAsc=!ordAsc;else{ordCol=c;ordAsc=true;}
+ render();});
+$("f-csv").onclick=()=>{
+ const r=filtrar();
+ const esc=s=>'"'+String(s).replace(/"/g,'""')+'"';
+ const csv="\uFEFF"+["Contrato;Dias;Fim vigencia;Contratada;CNPJ;Objeto;Valor global;Processo;Fundacao"]
+  .concat(r.map(c=>[c.n,c.d,dbr(c.fim),esc(c.f),c.cnpj,esc(c.o),String(c.v).replace(".",","),c.p,c.fund?"sim":"nao"].join(";"))).join("\n");
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+ a.download="contratos_ufg_vigencias.csv";a.click();};
+
+
+fetch("dados.json?v="+Date.now()).then(r=>r.json()).then(p=>{
+ DADOS=p.contratos; GERADO_EM=p.geradoEm;
+ const d=GERADO_EM.split("-");
+ document.getElementById("posicao").textContent=d[2]+"/"+d[1]+"/"+d[0];
+ render();
+}).catch(e=>{document.getElementById("resumo").textContent="Falha ao carregar dados.json: "+e;});
+</script>
+</body></html>

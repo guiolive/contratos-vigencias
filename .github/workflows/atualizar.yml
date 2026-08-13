@@ -1,0 +1,30 @@
+name: Atualizar dados dos contratos
+
+on:
+  schedule:
+    - cron: "0 9 * * 1-5"   # 06h00 Brasília (09h00 UTC), dias úteis
+  workflow_dispatch:          # permite rodar manualmente pela aba Actions
+
+permissions:
+  contents: write
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Baixar contratos da API Compras.gov.br
+        run: python atualizar.py
+
+      - name: Commit se houver mudança
+        run: |
+          git config user.name "painel-bot"
+          git config user.email "actions@github.com"
+          git add dados.json
+          git diff --cached --quiet || git commit -m "Atualização automática $(date -u +%F)"
+          git push
