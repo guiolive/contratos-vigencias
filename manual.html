@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Como capturar os dados</title>
+<style>
+ *{box-sizing:border-box}
+ body{font-family:Verdana,Geneva,Arial,sans-serif;background:#fff;margin:0;color:#222;font-size:12px;line-height:1.6}
+ .topo{background:#00447c;color:#fff;padding:10px 18px;border-bottom:4px solid #ffb612}
+ .topo h1{font-size:15px;margin:0;font-weight:bold}
+ .conteudo{padding:14px 18px;max-width:900px}
+ h2{font-size:13px;color:#00447c;margin:20px 0 6px;border-bottom:1px solid #b7c3cd;padding-bottom:3px}
+ p{margin:6px 0}
+ ul{margin:6px 0 6px 18px;padding:0}
+ li{margin:3px 0}
+ table{border-collapse:collapse;width:100%;margin:8px 0}
+ th{background:#00447c;color:#fff;padding:5px 7px;text-align:left;font-size:11px;border:1px solid #003156}
+ td{padding:4px 7px;border:1px solid #d4dde4;font-size:11.5px;vertical-align:top}
+ tr:nth-child(even) td{background:#f4f7fa}
+ code{font-family:Consolas,"Courier New",monospace;background:#eef2f6;padding:1px 4px;font-size:11px;border:1px solid #dde5ec}
+ pre{font-family:Consolas,"Courier New",monospace;background:#f4f7fa;border:1px solid #b7c3cd;
+     padding:8px 10px;font-size:11px;overflow-x:auto;line-height:1.45;white-space:pre-wrap;word-break:break-all}
+ a{color:#00447c}
+ .volta{margin-top:20px;border-top:1px solid #b7c3cd;padding-top:8px;font-size:11px}
+</style></head><body>
+
+<div class="topo"><h1>Como capturar os dados</h1></div>
+
+<div class="conteudo">
+
+<p>Tudo o que aparece no painel e na planilha sai de uma única consulta à API de dados abertos do
+Compras.gov.br. Nenhum dado é digitado, estimado ou completado à mão.</p>
+
+<h2>De onde vêm</h2>
+
+<p>API pública do Compras.gov.br (SEGES/MGI), sem chave e sem cadastro, retorno em JSON:</p>
+<pre>https://dadosabertos.compras.gov.br/modulo-contratos/1.2_consultarContratos_FimVigencia</pre>
+<p>A consulta é feita pelo órgão SIAFI 26235 (UFG). É a mesma base que a própria UFG alimenta no
+Compras.gov.br, então o painel não é fonte paralela, é espelho do que está lançado lá.</p>
+
+<h2>O que entra na base</h2>
+
+<p>O filtro é a data de fim de vigência: de hoje até hoje mais 730 dias. Ou seja, contratos que
+vencem nos próximos 24 meses. Daí decorre que:</p>
+<ul>
+ <li>contrato já vencido não aparece;</li>
+ <li>contrato que vence depois dos 24 meses entra sozinho na base conforme a janela avança;</li>
+ <li>contrato prorrogado, com aditivo já registrado no sistema, aparece com a data nova na coleta
+     seguinte;</li>
+ <li>registro marcado como excluído na origem é descartado.</li>
+</ul>
+<p>Não existe nenhum outro filtro. Nada é cortado por valor, modalidade, contratada ou objeto.</p>
+
+<h2>Como a coleta roda</h2>
+
+<p>O <code>atualizar.py</code> chama a API, pagina de 500 em 500 registros até acabar (hoje são duas
+páginas) e regrava o <code>dados.json</code> com a data da posição. Se a API estiver instável, cada
+página é tentada quatro vezes; se ainda assim não vier, a execução aborta sem gravar, para não
+publicar base pela metade.</p>
+
+<p>Roda sozinho às 6h da manhã, em dias úteis, pelo GitHub Actions, e pode ser disparado na mão pela
+aba Actions. Cada atualização vira um commit datado, então dá para recuperar a base de qualquer dia
+passado e mostrar como um contrato estava numa data específica.</p>
+
+<h2>O que é calculado aqui, e não vem da API</h2>
+
+<ul>
+ <li><b>Dias restantes:</b> diferença em dias corridos entre o fim da vigência e a data da coleta.</li>
+ <li><b>Situação:</b> crítico até 180 dias, atenção de 181 a 365, regular acima de 365. Corte de
+     gestão nosso, não da fonte.</li>
+ <li><b>Fundação de apoio:</b> marcado quando a razão social contém "FUNDACAO". É identificação por
+     nome, então uma empresa qualquer com "fundação" no nome seria marcada indevidamente.</li>
+ <li><b>Deduplicação:</b> guarda um registro por contrato mais UG de origem, porque a API repete o
+     mesmo contrato quando há mais de um evento de vigência.</li>
+ <li><b>Corte de texto:</b> objeto em 160 caracteres e razão social em 60, só para caber na tela. O
+     texto inteiro continua na fonte.</li>
+</ul>
+
+<h2>Campos</h2>
+
+<table>
+ <tr><th style="width:22%">Painel / CSV</th><th style="width:32%">Campo na API</th><th>Observação</th></tr>
+ <tr><td>Contrato</td><td><code>numeroContrato</code></td><td></td></tr>
+ <tr><td>Fim vigência</td><td><code>dataVigenciaFinal</code></td><td>Data vigente na posição da coleta</td></tr>
+ <tr><td>Dias</td><td>calculado</td><td></td></tr>
+ <tr><td>Situação</td><td>calculado</td><td>Crítico, atenção ou regular</td></tr>
+ <tr><td>Contratada</td><td><code>nomeRazaoSocialFornecedor</code></td><td>Cortada em 60 caracteres</td></tr>
+ <tr><td>CNPJ</td><td><code>niFornecedor</code></td><td>Sem formatação, sai no CSV</td></tr>
+ <tr><td>Objeto</td><td><code>objeto</code></td><td>Cortado em 160 caracteres</td></tr>
+ <tr><td>Valor global</td><td><code>valorGlobal</code></td><td>Valor total contratado</td></tr>
+ <tr><td>Processo</td><td><code>processo</code></td><td>Número SEI</td></tr>
+ <tr><td>Modalidade</td><td><code>nomeModalidadeCompra</code></td><td>Coletada, não exibida no painel</td></tr>
+ <tr><td>Fundação</td><td>derivado</td><td>sim ou não</td></tr>
+ <tr><td>Posição em</td><td><code>geradoEm</code></td><td>Data da coleta</td></tr>
+</table>
+
+<h2>Conferir por conta própria</h2>
+
+<p>Cola no navegador, ajustando as datas, e vem o JSON bruto do jeito que o script recebe:</p>
+<pre>https://dadosabertos.compras.gov.br/modulo-contratos/1.2_consultarContratos_FimVigencia?pagina=1&amp;tamanhoPagina=500&amp;codigoOrgao=26235&amp;dataVigenciaFinalMin=2026-08-18&amp;dataVigenciaFinalMax=2028-08-17</pre>
+
+<p>Para auditar uma linha da planilha, procura o número do contrato no JSON e compara data de fim,
+valor e fornecedor. Divergência só acontece se a posição da coleta for anterior a algum registro
+feito depois no Compras.gov.br.</p>
+
+<p>Para refazer a coleta inteira, basta Python 3, sem biblioteca externa:</p>
+<pre>python3 atualizar.py</pre>
+
+<h2>Cuidados ao usar</h2>
+
+<ul>
+ <li>Valor global é o total do contrato, não o saldo nem o executado. Não serve para medir
+     disponibilidade orçamentária.</li>
+ <li>Aditivo em tramitação não aparece. Contrato listado como crítico pode já estar com prorrogação
+     encaminhada, e isso se confirma com o gestor do contrato.</li>
+ <li>Contrato formalizado fora do Compras.gov.br não está aqui.</li>
+ <li>Lançamento errado na origem chega errado no painel. Não corrigimos a fonte de propósito:
+     divergência encontrada é sinal de acerto a fazer no próprio Compras.gov.br.</li>
+ <li>Gestor e fiscal não vêm nesse serviço da API.</li>
+ <li>Ao usar a planilha em documento ou reunião, cita a data da posição que está no topo do painel.
+     A base é uma fotografia do dia, não tempo real.</li>
+</ul>
+
+<div class="volta"><a href="index.html">Voltar ao painel</a></div>
+
+</div>
+</body></html>

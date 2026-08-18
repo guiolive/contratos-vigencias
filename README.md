@@ -9,6 +9,7 @@ Abertos do Compras.gov.br.
 | Arquivo | Função |
 |---|---|
 | `index.html` | Painel (filtros, ordenação, exportação CSV) — carrega `dados.json` |
+| `manual.html` | Como capturar os dados (fonte, filtros, campos, cuidados de uso) |
 | `dados.json` | Base de contratos (24 meses de vigências) + data da posição |
 | `atualizar.py` | Baixa os dados da API e regrava `dados.json` |
 | `.github/workflows/atualizar.yml` | Roda `atualizar.py` às 6h (Brasília), dias úteis, e commita se houver mudança |
