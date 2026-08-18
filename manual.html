@@ -28,14 +28,14 @@
 <div class="conteudo">
 
 <p>Tudo o que aparece no painel e na planilha sai de uma única consulta à API de dados abertos do
-Compras.gov.br. Nenhum dado é digitado, estimado ou completado à mão.</p>
+Compras.gov.br. Nada é digitado à mão.</p>
 
 <h2>De onde vêm</h2>
 
 <p>API pública do Compras.gov.br (SEGES/MGI), sem chave e sem cadastro, retorno em JSON:</p>
 <pre>https://dadosabertos.compras.gov.br/modulo-contratos/1.2_consultarContratos_FimVigencia</pre>
-<p>A consulta é feita pelo órgão SIAFI 26235 (UFG). É a mesma base que a própria UFG alimenta no
-Compras.gov.br, então o painel não é fonte paralela, é espelho do que está lançado lá.</p>
+<p>A consulta é feita pelo órgão SIAFI 26235 (UFG), que é a mesma base alimentada pela própria UFG
+no Compras.gov.br.</p>
 
 <h2>O que entra na base</h2>
 
@@ -65,10 +65,11 @@ passado e mostrar como um contrato estava numa data específica.</p>
 
 <ul>
  <li><b>Dias restantes:</b> diferença em dias corridos entre o fim da vigência e a data da coleta.</li>
- <li><b>Situação:</b> crítico até 180 dias, atenção de 181 a 365, regular acima de 365. Corte de
-     gestão nosso, não da fonte.</li>
+ <li><b>Situação:</b> crítico até 180 dias, atenção de 181 a 365, regular acima de 365. Faixa que
+     definimos aqui, a API não devolve esse campo.</li>
  <li><b>Fundação de apoio:</b> marcado quando a razão social contém "FUNDACAO". É identificação por
-     nome, então uma empresa qualquer com "fundação" no nome seria marcada indevidamente.</li>
+     nome, então uma empresa qualquer que tenha "fundação" na razão social seria marcada
+     indevidamente.</li>
  <li><b>Deduplicação:</b> guarda um registro por contrato mais UG de origem, porque a API repete o
      mesmo contrato quando há mais de um evento de vigência.</li>
  <li><b>Corte de texto:</b> objeto em 160 caracteres e razão social em 60, só para caber na tela. O
@@ -105,20 +106,22 @@ feito depois no Compras.gov.br.</p>
 <p>Para refazer a coleta inteira, basta Python 3, sem biblioteca externa:</p>
 <pre>python3 atualizar.py</pre>
 
-<h2>Cuidados ao usar</h2>
+<h2>Limitações</h2>
 
-<ul>
- <li>Valor global é o total do contrato, não o saldo nem o executado. Não serve para medir
-     disponibilidade orçamentária.</li>
- <li>Aditivo em tramitação não aparece. Contrato listado como crítico pode já estar com prorrogação
-     encaminhada, e isso se confirma com o gestor do contrato.</li>
- <li>Contrato formalizado fora do Compras.gov.br não está aqui.</li>
- <li>Lançamento errado na origem chega errado no painel. Não corrigimos a fonte de propósito:
-     divergência encontrada é sinal de acerto a fazer no próprio Compras.gov.br.</li>
- <li>Gestor e fiscal não vêm nesse serviço da API.</li>
- <li>Ao usar a planilha em documento ou reunião, cita a data da posição que está no topo do painel.
-     A base é uma fotografia do dia, não tempo real.</li>
-</ul>
+<p>O valor global é o valor total contratado, então não dá para usar a planilha para ver saldo ou
+quanto já foi executado.</p>
+
+<p>Aditivo que ainda está tramitando não aparece na API, então pode ter contrato marcado como
+crítico que já está com a prorrogação encaminhada. Quem sabe disso é o gestor do contrato.</p>
+
+<p>Contrato formalizado fora do Compras.gov.br não entra. Gestor e fiscal também não vêm, esse
+serviço da API não devolve esses campos.</p>
+
+<p>Se o lançamento está errado no Compras.gov.br, ele chega errado aqui, porque o script não corrige
+nada. Quando a planilha divergir do que a unidade sabe, o acerto é na origem.</p>
+
+<p>A base é sempre do dia da coleta. Vale citar a data que está no topo do painel quando a planilha
+for para algum documento.</p>
 
 <div class="volta"><a href="index.html">Voltar ao painel</a></div>
 
