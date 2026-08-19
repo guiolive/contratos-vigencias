@@ -180,7 +180,7 @@ function render(){
    ex=`<td class="num" title="Empenhado: R$ ${brl(c.emp)} · Liquidado a pagar: R$ ${brl(c.liq)} · Pago: ${pct.toFixed(0)}% do valor global">${brl(c.pag)}`+
     `<div class="exb"><div style="width:${Math.min(100,pct).toFixed(1)}%"></div></div></td>`;}
   const ncell=c.cid?`<a href="https://contratos.comprasnet.gov.br/transparencia/contratos/${encodeURIComponent(c.cid)}" target="_blank" rel="noopener" title="Abrir no Contratos.gov.br (transparência)">${esc(c.n)}</a>`:esc(c.n);
-  const tdias=c.d<0?`vigência registrada expirada há ${-c.d} dia(s)`+(c.eano?" — TEM empenho emitido neste ano: contrato vivo, registro de aditivo atrasado":" — sem empenho neste ano: provavelmente encerrado sem baixa"):`${c.d} dia(s) para o fim da vigência`;
+  const tdias=c.d<0?`vigência registrada expirada há ${-c.d} dia(s)`+(c.eano==null?" — sem dados de empenho nesta rodada (coleta falhou)":c.eano?" — TEM empenho emitido neste ano: contrato vivo, registro de aditivo atrasado":" — sem empenho neste ano: provavelmente encerrado sem baixa"):`${c.d} dia(s) para o fim da vigência`;
   return `<tr><td class="st ${cl}" title="${tdias}">${rt}</td>`+
    `<td>${ncell}</td><td>${dbr(c.fim)}</td>`+
    `<td>${esc(c.f)}${c.fund?' <span class="fund">[fundação]</span>':''}</td>`+
