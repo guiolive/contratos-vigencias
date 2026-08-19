@@ -130,6 +130,7 @@ const $=id=>document.getElementById(id);
 const brl=v=>v.toLocaleString("pt-BR",{maximumFractionDigits:0});
 const dbr=s=>s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4);
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const semAcento=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 const faixaDe=d=>d<0?"venc":(d<=180?"verm":(d<=365?"amar":"verd"));
 const rotulo={venc:["VERIFICAR","st-v"],verm:["CRÍTICO","st-c"],amar:["ATENÇÃO","st-a"],verd:["REGULAR","st-r"]};
 
@@ -142,7 +143,7 @@ const baseInst=()=>{const i=$("f-inst").value;
  return DADOS.filter(c=>i===""||(i==="c"?!c.ne:c.ne===1));};
 
 function filtrar(){
- const q=$("f-busca").value.trim().toLowerCase();
+ const q=semAcento($("f-busca").value.trim());
  const dmax=$("f-dias").value?+$("f-dias").value:null;
  const mes=$("f-mes").value, tipo=$("f-tipo").value;
  const vmin=$("f-valor").value?+$("f-valor").value:null;
@@ -158,7 +159,7 @@ function filtrar(){
   if(mes&&!c.fim.startsWith(mes))return false;
   if(tipo!==""&&String(c.fund)!==tipo)return false;
   if(vmin!==null&&c.v<vmin)return false;
-  if(q&&!(c.f.toLowerCase().includes(q)||c.o.toLowerCase().includes(q)||c.n.toLowerCase().includes(q)||c.p.toLowerCase().includes(q)||(c.g||"").toLowerCase().includes(q)))return false;
+  if(q&&![c.f,c.o,c.n,c.p,c.g||""].some(s=>semAcento(s).includes(q)))return false;
   return true;});
 }
 

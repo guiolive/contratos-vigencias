@@ -7,6 +7,7 @@ Executado diariamente pela GitHub Action (.github/workflows/atualizar.yml)."""
 import json
 import time
 import datetime
+import unicodedata
 import urllib.request
 
 CONTRATOS_API = "https://contratos.comprasnet.gov.br/api"
@@ -35,6 +36,11 @@ def _brl(s):
         return float(str(s).replace(".", "").replace(",", "."))
     except ValueError:
         return 0.0
+
+
+def _sem_acento(s):
+    """'FUNDAÇÃO' -> 'FUNDACAO' (a base mistura razões sociais com e sem acento)"""
+    return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
 
 
 def baixar():
@@ -78,7 +84,7 @@ def preparar(ativos, hoje):
             "d": dias,
             "v": round(_brl(c.get("valor_global")), 2),
             "mod": c.get("modalidade") or "",
-            "fund": 1 if "FUNDACAO" in forn.upper() else 0,
+            "fund": 1 if "FUNDACAO" in _sem_acento(forn).upper() else 0,
             "ne": 1 if c.get("tipo") == "Empenho" else 0,
             "cid": c.get("id"),
         })
