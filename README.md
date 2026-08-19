@@ -5,8 +5,9 @@ dos contratos da UFG (órgão 26235 / UG 153052), alimentado diariamente
 pela API do Comprasnet Contratos: contratos ativos da UG, vigências
 (refletindo termos aditivos) e execução financeira (empenhado, liquidado
 e pago por contrato). Contratos ativos com vigência vencida há até 180
-dias aparecem como VENCIDO — em geral renovação ainda não registrada.
-Compras diretas por nota de empenho ficam de fora.
+dias entram na faixa VERIFICAR — em geral renovação ainda não registrada.
+Notas de empenho com contratação real entram por padrão; o filtro
+Instrumento separa contratos e NEs.
 
 ## Estrutura
 
