@@ -131,6 +131,7 @@ const $=id=>document.getElementById(id);
 const brl=v=>v.toLocaleString("pt-BR",{maximumFractionDigits:0});
 const dbr=s=>s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4);
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const semAcento=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 const faixaDe=d=>d<0?"venc":(d<=180?"verm":(d<=365?"amar":"verd"));
 const rotulo={venc:["VERIFICAR","st-v"],verm:["CRÍTICO","st-c"],amar:["ATENÇÃO","st-a"],verd:["REGULAR","st-r"]};
 
@@ -143,7 +144,7 @@ const baseInst=()=>{const i=$("f-inst").value;
  return DADOS.filter(c=>i===""||(i==="c"?!c.ne:c.ne===1));};
 
 function filtrar(){
- const q=$("f-busca").value.trim().toLowerCase();
+ const q=semAcento($("f-busca").value.trim());
  const dmax=$("f-dias").value?+$("f-dias").value:null;
  const mes=$("f-mes").value, tipo=$("f-tipo").value;
  const vmin=$("f-valor").value?+$("f-valor").value:null;
@@ -159,7 +160,7 @@ function filtrar(){
   if(mes&&!c.fim.startsWith(mes))return false;
   if(tipo!==""&&String(c.fund)!==tipo)return false;
   if(vmin!==null&&c.v<vmin)return false;
-  if(q&&!(c.f.toLowerCase().includes(q)||c.o.toLowerCase().includes(q)||c.n.toLowerCase().includes(q)||c.p.toLowerCase().includes(q)||(c.g||"").toLowerCase().includes(q)))return false;
+  if(q&&![c.f,c.o,c.n,c.p,c.g||""].some(s=>semAcento(s).includes(q)))return false;
   return true;});
 }
 
@@ -168,8 +169,7 @@ function render(){
  r.sort((a,b)=>{let x=a[ordCol],y=b[ordCol];
   if(ordCol==="faixa"){x=a.d;y=b.d}
   if(x==null)x=-1; if(y==null)y=-1;
-  if(typeof x==="string"){x=x.toLowerCase();y=y.toLowerCase()}
-  if(typeof y==="string"&&typeof x!=="string"){y=-1}
+  if(typeof x==="string"||typeof y==="string"){x=String(x).toLowerCase();y=String(y).toLowerCase()}
   return (x<y?-1:x>y?1:0)*(ordAsc?1:-1);});
  const tam=+$("p-tam").value, tot=r.length, pags=Math.max(1,Math.ceil(tot/tam));
  if(pagina>pags)pagina=pags;
@@ -233,6 +233,10 @@ $("f-csv").onclick=()=>{
 
 fetch("dados.json?v="+Date.now()).then(r=>r.json()).then(p=>{
  DADOS=p.contratos; GERADO_EM=p.geradoEm;
+ // a carga roda só em dia útil às 6h: os dias até o fim da vigência são
+ // recalculados aqui na data de quem abre, senão faixas erram no fim de semana
+ const hoje=new Date(); hoje.setHours(0,0,0,0);
+ DADOS.forEach(c=>c.d=Math.round((new Date(c.fim+"T00:00:00")-hoje)/864e5));
  const d=GERADO_EM.split("-");
  document.getElementById("posicao").textContent=d[2]+"/"+d[1]+"/"+d[0];
  popularMeses();
