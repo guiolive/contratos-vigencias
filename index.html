@@ -228,6 +228,10 @@ $("f-csv").onclick=()=>{
 
 fetch("dados.json?v="+Date.now()).then(r=>r.json()).then(p=>{
  DADOS=p.contratos; GERADO_EM=p.geradoEm;
+ // a carga roda só em dia útil às 6h: os dias até o fim da vigência são
+ // recalculados aqui na data de quem abre, senão faixas erram no fim de semana
+ const hoje=new Date(); hoje.setHours(0,0,0,0);
+ DADOS.forEach(c=>c.d=Math.round((new Date(c.fim+"T00:00:00")-hoje)/864e5));
  const d=GERADO_EM.split("-");
  document.getElementById("posicao").textContent=d[2]+"/"+d[1]+"/"+d[0];
  popularMeses();
