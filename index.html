@@ -167,8 +167,7 @@ function render(){
  r.sort((a,b)=>{let x=a[ordCol],y=b[ordCol];
   if(ordCol==="faixa"){x=a.d;y=b.d}
   if(x==null)x=-1; if(y==null)y=-1;
-  if(typeof x==="string"){x=x.toLowerCase();y=y.toLowerCase()}
-  if(typeof y==="string"&&typeof x!=="string"){y=-1}
+  if(typeof x==="string"||typeof y==="string"){x=String(x).toLowerCase();y=String(y).toLowerCase()}
   return (x<y?-1:x>y?1:0)*(ordAsc?1:-1);});
  const tam=+$("p-tam").value, tot=r.length, pags=Math.max(1,Math.ceil(tot/tam));
  if(pagina>pags)pagina=pags;
@@ -229,6 +228,10 @@ $("f-csv").onclick=()=>{
 
 fetch("dados.json?v="+Date.now()).then(r=>r.json()).then(p=>{
  DADOS=p.contratos; GERADO_EM=p.geradoEm;
+ // a carga roda só em dia útil às 6h: os dias até o fim da vigência são
+ // recalculados aqui na data de quem abre, senão faixas erram no fim de semana
+ const hoje=new Date(); hoje.setHours(0,0,0,0);
+ DADOS.forEach(c=>c.d=Math.round((new Date(c.fim+"T00:00:00")-hoje)/864e5));
  const d=GERADO_EM.split("-");
  document.getElementById("posicao").textContent=d[2]+"/"+d[1]+"/"+d[0];
  popularMeses();
