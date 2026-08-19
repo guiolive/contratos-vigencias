@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Atualiza dados.json com os contratos da UFG (órgão 26235) vencendo nos
-próximos 24 meses, via API de Dados Abertos do Compras.gov.br.
+"""Atualiza dados.json com os contratos ativos da UFG (UG 153052) no
+Comprasnet Contratos: vigências (reflete aditivos de renovação) e execução
+financeira (empenhado/liquidado/pago, somados dos empenhos).
 Executado diariamente pela GitHub Action (.github/workflows/atualizar.yml)."""
 
 import json
@@ -8,67 +9,118 @@ import time
 import datetime
 import urllib.request
 
-BASE = "https://dadosabertos.compras.gov.br/modulo-contratos/1.2_consultarContratos_FimVigencia"
+CONTRATOS_API = "https://contratos.comprasnet.gov.br/api"
 ORGAO = "26235"   # UFG (código SIAFI)
+UG = "153052"
 JANELA_DIAS = 730
+VENCIDO_MAX_DIAS = 180   # vencidos há mais tempo = encerrados sem baixa no sistema
+
+
+def _get_json(url, timeout=120, tentativas=4):
+    req = urllib.request.Request(url, headers={"accept": "application/json"})
+    for tentativa in range(tentativas):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return json.load(r)
+        except Exception:
+            time.sleep(6 * (tentativa + 1))
+    return None
+
+
+def _brl(s):
+    """'7.389.247,33' -> 7389247.33"""
+    if not s:
+        return 0.0
+    try:
+        return float(str(s).replace(".", "").replace(",", "."))
+    except ValueError:
+        return 0.0
 
 
 def baixar():
+    """Lista completa de contratos ativos da UG (sem paginação; demora ~2 min)."""
     hoje = datetime.date.today()
-    fim = hoje + datetime.timedelta(days=JANELA_DIAS)
-    todos, pagina, total_paginas = [], 1, 1
-    while pagina <= total_paginas and pagina <= 10:
-        url = (f"{BASE}?pagina={pagina}&tamanhoPagina=500&codigoOrgao={ORGAO}"
-               f"&dataVigenciaFinalMin={hoje}&dataVigenciaFinalMax={fim}")
-        req = urllib.request.Request(url, headers={"accept": "application/json"})
-        for tentativa in range(4):
-            try:
-                with urllib.request.urlopen(req, timeout=90) as r:
-                    d = json.load(r)
-                break
-            except Exception:
-                time.sleep(6 * (tentativa + 1))
-        else:
-            raise SystemExit(f"Falha na página {pagina} após 4 tentativas")
-        total_paginas = d.get("totalPaginas", 1)
-        todos += [c for c in d.get("resultado", []) if not c.get("contratoExcluido")]
-        pagina += 1
-        time.sleep(1.5)
-    return todos, hoje
+    ativos = _get_json(f"{CONTRATOS_API}/contrato/ug/{UG}", timeout=600)
+    if not ativos:
+        raise SystemExit("Falha ao consultar contratos ativos no Comprasnet Contratos")
+    return ativos, hoje
 
 
-def preparar(todos, hoje):
-    vistos, uniq = set(), []
-    for c in todos:
-        k = (c["numeroContrato"], c.get("codigoUnidadeGestoraOrigemContrato"))
-        if k not in vistos:
-            vistos.add(k)
-            uniq.append(c)
-    dados = []
-    for c in uniq:
-        fim = c["dataVigenciaFinal"][:10]
+def preparar(ativos, hoje):
+    """Contratos ativos com vigência final até JANELA_DIAS à frente.
+    Inclui os vencidos há até VENCIDO_MAX_DIAS que seguem ativos (dias
+    negativos) — normalmente aditivo de renovação ainda não registrado.
+    Vencidos mais antigos são encerrados sem baixa e ficam de fora."""
+    vistos, dados = set(), []
+    for c in ativos:
+        fim = (c.get("vigencia_fim") or "")[:10]
+        n = c.get("numero")
+        if not fim or not n or n in vistos:
+            continue
+        vistos.add(n)
         dias = (datetime.date.fromisoformat(fim) - hoje).days
-        forn = c.get("nomeRazaoSocialFornecedor") or ""
+        if dias > JANELA_DIAS or dias < -VENCIDO_MAX_DIAS:
+            continue
+        forn = ((c.get("fornecedor") or {}).get("nome") or "")
         dados.append({
-            "n": c["numeroContrato"],
+            "n": n,
             "o": (c.get("objeto") or "")[:160],
             "f": forn[:60],
-            "cnpj": c.get("niFornecedor") or "",
+            "cnpj": (c.get("fornecedor") or {}).get("cnpj_cpf_idgener") or "",
             "p": c.get("processo") or "",
             "fim": fim,
             "d": dias,
-            "v": round(c.get("valorGlobal") or 0, 2),
-            "mod": c.get("nomeModalidadeCompra") or "",
+            "v": round(_brl(c.get("valor_global")), 2),
+            "mod": c.get("modalidade") or "",
             "fund": 1 if "FUNDACAO" in forn.upper() else 0,
+            "ne": 1 if c.get("tipo") == "Empenho" else 0,
+            "cid": c.get("id"),
         })
     dados.sort(key=lambda x: x["d"])
     return dados
 
 
+def _nome(usuario):
+    """'***.843.731-** - ARETUZA ALVES MARCÓRIO' -> 'ARETUZA ALVES MARCÓRIO'"""
+    return usuario.split(" - ", 1)[-1].strip() if usuario else ""
+
+
+def execucao(dados):
+    """Complementa cada contrato com emp/liq/pag (execução financeira, somada
+    dos empenhos; `liq` = liquidado aguardando pagamento; inclui restos a
+    pagar) e com o gestor titular cadastrado no Comprasnet. Falha de um
+    contrato não derruba a rodada."""
+    achados = 0
+    for c in dados:
+        emps = _get_json(f"{CONTRATOS_API}/contrato/{c['cid']}/empenhos", tentativas=3)
+        if emps is not None:
+            ano = str(datetime.date.today().year)
+            c["eano"] = 1 if any((e.get("numero") or "").startswith(ano) for e in emps) else 0
+            c["emp"] = round(sum(_brl(e.get("empenhado")) + _brl(e.get("rpinscrito")) for e in emps), 2)
+            c["liq"] = round(sum(_brl(e.get("liquidado")) + _brl(e.get("rpliquidado")) for e in emps), 2)
+            c["pag"] = round(sum(_brl(e.get("pago")) + _brl(e.get("rppago")) for e in emps), 2)
+            achados += 1
+        resp = _get_json(f"{CONTRATOS_API}/contrato/{c['cid']}/responsaveis", tentativas=2)
+        if resp:
+            ativos = [p for p in resp if p.get("situacao") == "Ativo"]
+            gestores = [_nome(p.get("usuario")) for p in ativos if p.get("funcao_id") == "Gestor"]
+            if gestores:
+                c["g"] = " / ".join(gestores)
+            else:
+                for funcao in ("Gestor Substituto", "Fiscal Titular", "Fiscal Técnico", "Fiscal Administrativo"):
+                    quem = next((p for p in ativos if p.get("funcao_id") == funcao), None)
+                    if quem:
+                        c["g"] = f"{_nome(quem.get('usuario'))} ({funcao.lower()})"
+                        break
+        time.sleep(0.3)
+    print(f"Execução financeira obtida para {achados} de {len(dados)} contratos")
+
+
 if __name__ == "__main__":
-    todos, hoje = baixar()
-    dados = preparar(todos, hoje)
-    pacote = {"geradoEm": hoje.isoformat(), "orgao": ORGAO, "ug": "153052",
+    ativos, hoje = baixar()
+    dados = preparar(ativos, hoje)
+    execucao(dados)
+    pacote = {"geradoEm": hoje.isoformat(), "orgao": ORGAO, "ug": UG,
               "contratos": dados}
     with open("dados.json", "w", encoding="utf-8") as f:
         json.dump(pacote, f, ensure_ascii=False)

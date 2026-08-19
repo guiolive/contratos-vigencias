@@ -18,7 +18,7 @@
  table.resumo td.clic:hover{background:#f2f7fb}
  table.resumo td.sel{background:#fff3cd}
  .sq{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px;border:1px solid #888}
- .sq.c{background:#c0392b}.sq.a{background:#e6a817}.sq.r{background:#2e7d32}
+ .sq.c{background:#c0392b}.sq.a{background:#e6a817}.sq.r{background:#2e7d32}.sq.v{background:#6a1b9a}
  fieldset{border:1px solid #b7c3cd;padding:10px 12px;margin:0 0 14px}
  legend{font-size:11px;font-weight:bold;color:#00447c;padding:0 6px}
  .linha-f{display:flex;flex-wrap:wrap;gap:14px;align-items:end}
@@ -36,8 +36,11 @@
  table.lista tr:nth-child(even) td{background:#f4f7fa}
  td.num{text-align:right;white-space:nowrap}
  td.st{white-space:nowrap;font-weight:bold;font-size:10.5px}
- .st-c{color:#a02318}.st-a{color:#9a6d00}.st-r{color:#20621f}
+ .st-c{color:#a02318}.st-a{color:#9a6d00}.st-r{color:#20621f}.st-v{color:#6a1b9a}
  .fund{color:#555;font-size:10px}
+ td a{color:#00447c}
+ .exb{height:4px;background:#dfe6ec;margin-top:3px;min-width:70px}
+ .exb div{height:4px;background:#2e7d32}
  .pag{margin-top:8px;font-size:11px;display:flex;gap:8px;align-items:center}
  .rodape{margin-top:16px;border-top:1px solid #b7c3cd;padding-top:8px;font-size:10.5px;color:#666;line-height:1.5}
 </style></head><body>
@@ -47,11 +50,12 @@
 </div>
 
 <div class="conteudo">
-<div class="info">Fonte: API de Dados Abertos Compras.gov.br · Vigências finais nos próximos 24 meses · Posição em <span id="posicao">—</span> · Clique nas células do quadro-resumo para filtrar; clique nos títulos das colunas para ordenar.</div>
+<div class="info">Posição em <span id="posicao">—</span></div>
 
 <table class="resumo">
  <tr>
   <th>Total monitorado</th>
+  <th><span class="sq v"></span>Verificar (venc. no sistema)</th>
   <th><span class="sq c"></span>Crítico (≤180 dias)</th>
   <th><span class="sq a"></span>Atenção (181–365)</th>
   <th><span class="sq r"></span>Regular (&gt;365)</th>
@@ -60,6 +64,7 @@
  </tr>
  <tr>
   <td class="qtd clic sel" data-faixa="todas" id="c-tot">–</td>
+  <td class="qtd clic" data-faixa="venc" id="c-venc">–</td>
   <td class="qtd clic" data-faixa="verm" id="c-verm">–</td>
   <td class="qtd clic" data-faixa="amar" id="c-amar">–</td>
   <td class="qtd clic" data-faixa="verd" id="c-verd">–</td>
@@ -67,7 +72,7 @@
   <td class="qtd clic" data-faixa="60d" id="c-60">–</td>
  </tr>
  <tr>
-  <td id="v-tot">–</td><td id="v-verm">–</td><td id="v-amar">–</td>
+  <td id="v-tot">–</td><td id="v-venc">–</td><td id="v-verm">–</td><td id="v-amar">–</td>
   <td id="v-verd">–</td><td id="v-30">–</td><td id="v-60">–</td>
  </tr>
 </table>
@@ -84,6 +89,9 @@
  <div><label>Contratada</label>
   <select id="f-tipo"><option value="">todas</option><option value="0">Mercado</option>
   <option value="1">Fundação de apoio</option></select></div>
+ <div><label>Instrumento</label>
+  <select id="f-inst"><option value="">todos</option><option value="c">Contratos</option>
+  <option value="ne">Notas de empenho</option></select></div>
  <div><label>Valor global mínimo</label>
   <select id="f-valor"><option value="">—</option><option value="100000">R$ 100.000</option>
   <option value="500000">R$ 500.000</option><option value="1000000">R$ 1.000.000</option>
@@ -103,16 +111,14 @@
 
 <table class="lista">
  <thead><tr>
-  <th data-c="d">Dias</th><th data-c="faixa">Situação</th><th data-c="n">Contrato</th>
+  <th data-c="faixa">Situação</th><th data-c="n">Contrato</th>
   <th data-c="fim">Fim vigência</th><th data-c="f">Contratada</th><th data-c="o">Objeto</th>
-  <th data-c="v">Valor global (R$)</th><th data-c="p">Processo</th>
+  <th data-c="v">Valor global (R$)</th><th data-c="pag">Pago (R$)</th>
+  <th data-c="g">Gestor</th><th data-c="p">Processo</th>
  </tr></thead>
  <tbody id="corpo"></tbody>
 </table>
 
-<div class="rodape">
-<b>Notas:</b> (1) Valor global = valor total contratado, não o saldo remanescente nem o valor executado. (2) Contratos com fundações de apoio (FUNAPE, RTVE, FUNDAHC e congêneres) seguem rito próprio de renovação e estão identificados na coluna Contratada. (3) Contratos formalizados fora do Compras.gov.br não constam desta base. (4) A existência de aditivo em tramitação não é informada pela fonte — verificação junto ao gestor do contrato.
-</div>
 </div>
 
 <script>
@@ -123,30 +129,35 @@ let faixaAtiva="todas", ordCol="d", ordAsc=true, pagina=1;
 const $=id=>document.getElementById(id);
 const brl=v=>v.toLocaleString("pt-BR",{maximumFractionDigits:0});
 const dbr=s=>s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4);
-const faixaDe=d=>d<=180?"verm":(d<=365?"amar":"verd");
-const rotulo={verm:["CRÍTICO","st-c"],amar:["ATENÇÃO","st-a"],verd:["REGULAR","st-r"]};
+const faixaDe=d=>d<0?"venc":(d<=180?"verm":(d<=365?"amar":"verd"));
+const rotulo={venc:["VERIFICAR","st-v"],verm:["CRÍTICO","st-c"],amar:["ATENÇÃO","st-a"],verd:["REGULAR","st-r"]};
 
-(()=>{const ms=[...new Set(DADOS.map(c=>c.fim.slice(0,7)))].sort();
+function popularMeses(){const ms=[...new Set(DADOS.map(c=>c.fim.slice(0,7)))].sort();
  for(const m of ms){const o=document.createElement("option");o.value=m;
   o.textContent=MESES[m.slice(5)]+"/"+m.slice(2,4)+" ("+DADOS.filter(c=>c.fim.startsWith(m)).length+")";
-  $("f-mes").appendChild(o);}})();
+  $("f-mes").appendChild(o);}}
+
+const baseInst=()=>{const i=$("f-inst").value;
+ return DADOS.filter(c=>i===""||(i==="c"?!c.ne:c.ne===1));};
 
 function filtrar(){
  const q=$("f-busca").value.trim().toLowerCase();
  const dmax=$("f-dias").value?+$("f-dias").value:null;
  const mes=$("f-mes").value, tipo=$("f-tipo").value;
  const vmin=$("f-valor").value?+$("f-valor").value:null;
- return DADOS.filter(c=>{
-  if(faixaAtiva==="verm"&&c.d>180)return false;
+ return baseInst().filter(c=>{
+  if(faixaAtiva==="venc"&&c.d>=0)return false;
+  if(faixaAtiva!=="venc"&&c.d<0)return false;
+  if(faixaAtiva==="verm"&&(c.d<0||c.d>180))return false;
   if(faixaAtiva==="amar"&&(c.d<=180||c.d>365))return false;
   if(faixaAtiva==="verd"&&c.d<=365)return false;
-  if(faixaAtiva==="30d"&&c.d>30)return false;
-  if(faixaAtiva==="60d"&&c.d>60)return false;
+  if(faixaAtiva==="30d"&&(c.d<0||c.d>30))return false;
+  if(faixaAtiva==="60d"&&(c.d<0||c.d>60))return false;
   if(dmax!==null&&c.d>dmax)return false;
   if(mes&&!c.fim.startsWith(mes))return false;
   if(tipo!==""&&String(c.fund)!==tipo)return false;
   if(vmin!==null&&c.v<vmin)return false;
-  if(q&&!(c.f.toLowerCase().includes(q)||c.o.toLowerCase().includes(q)||c.n.toLowerCase().includes(q)||c.p.toLowerCase().includes(q)))return false;
+  if(q&&!(c.f.toLowerCase().includes(q)||c.o.toLowerCase().includes(q)||c.n.toLowerCase().includes(q)||c.p.toLowerCase().includes(q)||(c.g||"").toLowerCase().includes(q)))return false;
   return true;});
 }
 
@@ -154,23 +165,35 @@ function render(){
  let r=filtrar();
  r.sort((a,b)=>{let x=a[ordCol],y=b[ordCol];
   if(ordCol==="faixa"){x=a.d;y=b.d}
+  if(x==null)x=-1; if(y==null)y=-1;
   if(typeof x==="string"){x=x.toLowerCase();y=y.toLowerCase()}
+  if(typeof y==="string"&&typeof x!=="string"){y=-1}
   return (x<y?-1:x>y?1:0)*(ordAsc?1:-1);});
  const tam=+$("p-tam").value, tot=r.length, pags=Math.max(1,Math.ceil(tot/tam));
  if(pagina>pags)pagina=pags;
  const fatia=r.slice((pagina-1)*tam,(pagina-1)*tam+tam);
  $("corpo").innerHTML=fatia.map(c=>{
   const fx=faixaDe(c.d), [rt,cl]=rotulo[fx];
-  return `<tr><td class="num">${c.d}</td><td class="st ${cl}">${rt}</td>`+
-   `<td>${c.n}</td><td>${dbr(c.fim)}</td>`+
+  let ex='<td class="num" title="Sem dados no Comprasnet Contratos">—</td>';
+  if(c.pag!=null){
+   const pct=c.v>0?c.pag/c.v*100:0;
+   ex=`<td class="num" title="Empenhado: R$ ${brl(c.emp)} · Liquidado a pagar: R$ ${brl(c.liq)} · Pago: ${pct.toFixed(0)}% do valor global">${brl(c.pag)}`+
+    `<div class="exb"><div style="width:${Math.min(100,pct).toFixed(1)}%"></div></div></td>`;}
+  const ncell=c.cid?`<a href="https://contratos.comprasnet.gov.br/transparencia/contratos/${c.cid}" target="_blank" rel="noopener" title="Abrir no Contratos.gov.br (transparência)">${c.n}</a>`:c.n;
+  const tdias=c.d<0?`vigência registrada expirada há ${-c.d} dia(s)`+(c.eano?" — TEM empenho emitido neste ano: contrato vivo, registro de aditivo atrasado":" — sem empenho neste ano: provavelmente encerrado sem baixa"):`${c.d} dia(s) para o fim da vigência`;
+  return `<tr><td class="st ${cl}" title="${tdias}">${rt}</td>`+
+   `<td>${ncell}</td><td>${dbr(c.fim)}</td>`+
    `<td>${c.f}${c.fund?' <span class="fund">[fundação]</span>':''}</td>`+
-   `<td>${c.o}</td><td class="num">${brl(c.v)}</td><td>${c.p}</td></tr>`;}).join("");
+   `<td>${c.o}</td><td class="num">${brl(c.v)}</td>${ex}<td>${c.g||""}</td><td>${c.p}</td></tr>`;}).join("");
  const soma=r.reduce((s,c)=>s+c.v,0);
  $("resumo").textContent=`${tot} contrato(s) no filtro — valor global somado: R$ ${brl(soma)}`;
  $("p-info").textContent=`pág. ${pagina}/${pags}`;
- const kv=f=>DADOS.filter(c=>faixaDe(c.d)===f);
- const d30=DADOS.filter(c=>c.d<=30), d60=DADOS.filter(c=>c.d<=60);
- $("c-tot").textContent=DADOS.length; $("v-tot").textContent="R$ "+brl(DADOS.reduce((s,c)=>s+c.v,0));
+ const B=baseInst();
+ const kv=f=>B.filter(c=>faixaDe(c.d)===f);
+ const d30=B.filter(c=>c.d>=0&&c.d<=30), d60=B.filter(c=>c.d>=0&&c.d<=60);
+ const vig=B.filter(c=>c.d>=0);
+ $("c-tot").textContent=vig.length; $("v-tot").textContent="R$ "+brl(vig.reduce((s,c)=>s+c.v,0));
+ $("c-venc").textContent=kv("venc").length; $("v-venc").textContent="R$ "+brl(kv("venc").reduce((s,c)=>s+c.v,0));
  $("c-verm").textContent=kv("verm").length; $("v-verm").textContent="R$ "+brl(kv("verm").reduce((s,c)=>s+c.v,0));
  $("c-amar").textContent=kv("amar").length; $("v-amar").textContent="R$ "+brl(kv("amar").reduce((s,c)=>s+c.v,0));
  $("c-verd").textContent=kv("verd").length; $("v-verd").textContent="R$ "+brl(kv("verd").reduce((s,c)=>s+c.v,0));
@@ -181,9 +204,9 @@ function render(){
 document.querySelectorAll("td.clic").forEach(k=>k.onclick=()=>{
  document.querySelectorAll("td.clic").forEach(x=>x.classList.remove("sel"));
  k.classList.add("sel"); faixaAtiva=k.dataset.faixa; pagina=1; render();});
-["f-busca","f-dias","f-mes","f-tipo","f-valor","p-tam"].forEach(id=>
+["f-busca","f-dias","f-mes","f-tipo","f-valor","f-inst","p-tam"].forEach(id=>
  $(id).addEventListener("input",()=>{pagina=1;render();}));
-$("f-limpar").onclick=()=>{["f-busca","f-dias","f-mes","f-tipo","f-valor"].forEach(id=>$(id).value="");
+$("f-limpar").onclick=()=>{["f-busca","f-dias","f-mes","f-tipo","f-valor","f-inst"].forEach(id=>$(id).value="");
  faixaAtiva="todas";document.querySelectorAll("td.clic").forEach(x=>x.classList.remove("sel"));
  $("c-tot").classList.add("sel");pagina=1;render();};
 $("p-ant").onclick=()=>{if(pagina>1){pagina--;render();}};
@@ -195,8 +218,9 @@ document.querySelectorAll("table.lista th").forEach(th=>th.onclick=()=>{
 $("f-csv").onclick=()=>{
  const r=filtrar();
  const esc=s=>'"'+String(s).replace(/"/g,'""')+'"';
- const csv="\uFEFF"+["Contrato;Dias;Fim vigencia;Contratada;CNPJ;Objeto;Valor global;Processo;Fundacao"]
-  .concat(r.map(c=>[c.n,c.d,dbr(c.fim),esc(c.f),c.cnpj,esc(c.o),String(c.v).replace(".",","),c.p,c.fund?"sim":"nao"].join(";"))).join("\n");
+ const dec=v=>v==null?"":String(v).replace(".",",");
+ const csv="\uFEFF"+["Contrato;Dias;Fim vigencia;Contratada;CNPJ;Objeto;Valor global;Empenhado;Liquidado;Pago;Gestor;Processo;Fundacao"]
+  .concat(r.map(c=>[c.n,c.d,dbr(c.fim),esc(c.f),c.cnpj,esc(c.o),dec(c.v),dec(c.emp),dec(c.liq),dec(c.pag),esc(c.g||""),c.p,c.fund?"sim":"nao"].join(";"))).join("\n");
  const a=document.createElement("a");
  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
  a.download="contratos_ufg_vigencias.csv";a.click();};
@@ -206,6 +230,7 @@ fetch("dados.json?v="+Date.now()).then(r=>r.json()).then(p=>{
  DADOS=p.contratos; GERADO_EM=p.geradoEm;
  const d=GERADO_EM.split("-");
  document.getElementById("posicao").textContent=d[2]+"/"+d[1]+"/"+d[0];
+ popularMeses();
  render();
 }).catch(e=>{document.getElementById("resumo").textContent="Falha ao carregar dados.json: "+e;});
 </script>

@@ -1,15 +1,19 @@
 # Controle de Vigências Contratuais — DLOG/PROAD/UFG
 
-Painel público de acompanhamento das vigências dos contratos da UFG
-(órgão 26235 / UG 153052), alimentado diariamente pela API de Dados
-Abertos do Compras.gov.br.
+Painel público de acompanhamento das vigências e da execução financeira
+dos contratos da UFG (órgão 26235 / UG 153052), alimentado diariamente
+pela API do Comprasnet Contratos: contratos ativos da UG, vigências
+(refletindo termos aditivos) e execução financeira (empenhado, liquidado
+e pago por contrato). Contratos ativos com vigência vencida há até 180
+dias aparecem como VENCIDO — em geral renovação ainda não registrada.
+Compras diretas por nota de empenho ficam de fora.
 
 ## Estrutura
 
 | Arquivo | Função |
 |---|---|
 | `index.html` | Painel (filtros, ordenação, exportação CSV) — carrega `dados.json` |
-| `dados.json` | Base de contratos (24 meses de vigências) + data da posição |
+| `dados.json` | Base de contratos (24 meses de vigências + execução financeira) + data da posição |
 | `atualizar.py` | Baixa os dados da API e regrava `dados.json` |
 | `.github/workflows/atualizar.yml` | Roda `atualizar.py` às 6h (Brasília), dias úteis, e commita se houver mudança |
 
@@ -43,5 +47,7 @@ para o servidor da DLOG e agendar `atualizar.py` num cron do servidor.
 ## Observações
 
 - A API é pública e sem autenticação; nenhum segredo é necessário no repositório.
+  (Os endpoints de consulta do Comprasnet Contratos — contratos por UG, empenhos,
+  faturas — são abertos; só o `/api/v1`, de gestão, exige credencial.)
 - `dados.json` contém apenas dados públicos já disponíveis no Portal de Compras.
 - O horário do cron usa UTC (9h UTC = 6h Brasília).
