@@ -41,6 +41,7 @@
  td a{color:#00447c}
  .exb{height:4px;background:#dfe6ec;margin-top:3px;min-width:70px}
  .exb div{height:4px;background:#2e7d32}
+ .exb div.mais{background:repeating-linear-gradient(45deg,#2e7d32 0 4px,#8fb894 4px 8px)}
  .pag{margin-top:8px;font-size:11px;display:flex;gap:8px;align-items:center}
  .rodape{margin-top:16px;border-top:1px solid #b7c3cd;padding-top:8px;font-size:10.5px;color:#666;line-height:1.5}
 </style></head><body>
@@ -177,8 +178,11 @@ function render(){
   let ex='<td class="num" title="Sem dados no Comprasnet Contratos">—</td>';
   if(c.pag!=null){
    const pct=c.v>0?c.pag/c.v*100:0;
-   ex=`<td class="num" title="Empenhado: R$ ${brl(c.emp)} · Liquidado a pagar: R$ ${brl(c.liq)} · Pago: ${pct.toFixed(0)}% do valor global">${brl(c.pag)}`+
-    `<div class="exb"><div style="width:${Math.min(100,pct).toFixed(1)}%"></div></div></td>`;}
+   const tpago=pct>100
+    ?`Pago: ${(c.pag/c.v).toFixed(1).replace(".",",")}× o valor global — o pago acumula todos os exercícios do contrato; o valor global é só da vigência atual`
+    :`Pago: ${pct.toFixed(0)}% do valor global`;
+   ex=`<td class="num" title="Empenhado: R$ ${brl(c.emp)} · Liquidado a pagar: R$ ${brl(c.liq)} · ${tpago}">${brl(c.pag)}`+
+    `<div class="exb"><div${pct>100?' class="mais"':''} style="width:${Math.min(100,pct).toFixed(1)}%"></div></div></td>`;}
   const ncell=c.cid?`<a href="https://contratos.comprasnet.gov.br/transparencia/contratos/${c.cid}" target="_blank" rel="noopener" title="Abrir no Contratos.gov.br (transparência)">${c.n}</a>`:c.n;
   const tdias=c.d<0?`vigência registrada expirada há ${-c.d} dia(s)`+(c.eano?" — TEM empenho emitido neste ano: contrato vivo, registro de aditivo atrasado":" — sem empenho neste ano: provavelmente encerrado sem baixa"):`${c.d} dia(s) para o fim da vigência`;
   return `<tr><td class="st ${cl}" title="${tdias}">${rt}</td>`+
