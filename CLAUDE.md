@@ -75,7 +75,11 @@ contratos; após filtros do painel, 633 monitorados (372 contratos + 261 NEs).
   responsável cadastrado — a coluna vazia é em si uma pendência (designação
   não registrada). A pesquisa busca também por nome de gestor.
 - Pago = Pg + RP Pg de todos os empenhos (acumula exercícios; pode passar o
-  valor global da vigência atual — esperado, não é bug).
+  valor global da vigência atual — esperado, não é bug). Quando passa, a
+  barrinha fica hachurada e o tooltip mostra o múltiplo (ex.: "3,8× o valor
+  global") em vez de percentual. O `valor_acumulado` da API foi testado como
+  denominador e descartado: em 36 de 48 casos vem zerado, igual ao global ou
+  sem relação com o contrato.
 - Interface enxuta por exigência do Guilherme: sem notas de rodapé, sem linha
   de fonte, sem coluna de dias (dias só no tooltip da situação). Visual sóbrio
   de sistema de governo.
