@@ -120,12 +120,19 @@ def execucao(dados):
                         break
         time.sleep(0.3)
     print(f"Execução financeira obtida para {achados} de {len(dados)} contratos")
+    return achados
 
 
 if __name__ == "__main__":
     ativos, hoje = baixar()
     dados = preparar(ativos, hoje)
-    execucao(dados)
+    achados = execucao(dados)
+    # queda da API no meio da rodada: aborta sem gravar, senão o painel
+    # publica um dia inteiro sem execução financeira e sem gestores
+    if dados and achados < 0.9 * len(dados):
+        raise SystemExit(
+            f"Só {achados} de {len(dados)} contratos com execução obtida "
+            "(mínimo 90%) — abortando sem gravar dados.json")
     pacote = {"geradoEm": hoje.isoformat(), "orgao": ORGAO, "ug": UG,
               "contratos": dados}
     with open("dados.json", "w", encoding="utf-8") as f:
