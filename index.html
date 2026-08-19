@@ -129,6 +129,7 @@ let faixaAtiva="todas", ordCol="d", ordAsc=true, pagina=1;
 const $=id=>document.getElementById(id);
 const brl=v=>v.toLocaleString("pt-BR",{maximumFractionDigits:0});
 const dbr=s=>s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4);
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const semAcento=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 const faixaDe=d=>d<0?"venc":(d<=180?"verm":(d<=365?"amar":"verd"));
 const rotulo={venc:["VERIFICAR","st-v"],verm:["CRÍTICO","st-c"],amar:["ATENÇÃO","st-a"],verd:["REGULAR","st-r"]};
@@ -180,12 +181,12 @@ function render(){
    const pct=c.v>0?c.pag/c.v*100:0;
    ex=`<td class="num" title="Empenhado: R$ ${brl(c.emp)} · Liquidado a pagar: R$ ${brl(c.liq)} · Pago: ${pct.toFixed(0)}% do valor global">${brl(c.pag)}`+
     `<div class="exb"><div style="width:${Math.min(100,pct).toFixed(1)}%"></div></div></td>`;}
-  const ncell=c.cid?`<a href="https://contratos.comprasnet.gov.br/transparencia/contratos/${c.cid}" target="_blank" rel="noopener" title="Abrir no Contratos.gov.br (transparência)">${c.n}</a>`:c.n;
+  const ncell=c.cid?`<a href="https://contratos.comprasnet.gov.br/transparencia/contratos/${encodeURIComponent(c.cid)}" target="_blank" rel="noopener" title="Abrir no Contratos.gov.br (transparência)">${esc(c.n)}</a>`:esc(c.n);
   const tdias=c.d<0?`vigência registrada expirada há ${-c.d} dia(s)`+(c.eano?" — TEM empenho emitido neste ano: contrato vivo, registro de aditivo atrasado":" — sem empenho neste ano: provavelmente encerrado sem baixa"):`${c.d} dia(s) para o fim da vigência`;
   return `<tr><td class="st ${cl}" title="${tdias}">${rt}</td>`+
    `<td>${ncell}</td><td>${dbr(c.fim)}</td>`+
-   `<td>${c.f}${c.fund?' <span class="fund">[fundação]</span>':''}</td>`+
-   `<td>${c.o}</td><td class="num">${brl(c.v)}</td>${ex}<td>${c.g||""}</td><td>${c.p}</td></tr>`;}).join("");
+   `<td>${esc(c.f)}${c.fund?' <span class="fund">[fundação]</span>':''}</td>`+
+   `<td>${esc(c.o)}</td><td class="num">${brl(c.v)}</td>${ex}<td>${esc(c.g||"")}</td><td>${esc(c.p)}</td></tr>`;}).join("");
  const soma=r.reduce((s,c)=>s+c.v,0);
  $("resumo").textContent=`${tot} contrato(s) no filtro — valor global somado: R$ ${brl(soma)}`;
  $("p-info").textContent=`pág. ${pagina}/${pags}`;
@@ -218,10 +219,10 @@ document.querySelectorAll("table.lista th").forEach(th=>th.onclick=()=>{
  render();});
 $("f-csv").onclick=()=>{
  const r=filtrar();
- const esc=s=>'"'+String(s).replace(/"/g,'""')+'"';
+ const cel=s=>{s=String(s);if(/^[=+@-]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'};
  const dec=v=>v==null?"":String(v).replace(".",",");
  const csv="\uFEFF"+["Contrato;Dias;Fim vigencia;Contratada;CNPJ;Objeto;Valor global;Empenhado;Liquidado;Pago;Gestor;Processo;Fundacao"]
-  .concat(r.map(c=>[c.n,c.d,dbr(c.fim),esc(c.f),c.cnpj,esc(c.o),dec(c.v),dec(c.emp),dec(c.liq),dec(c.pag),esc(c.g||""),c.p,c.fund?"sim":"nao"].join(";"))).join("\n");
+  .concat(r.map(c=>[c.n,c.d,dbr(c.fim),cel(c.f),c.cnpj,cel(c.o),dec(c.v),dec(c.emp),dec(c.liq),dec(c.pag),cel(c.g||""),c.p,c.fund?"sim":"nao"].join(";"))).join("\n");
  const a=document.createElement("a");
  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
  a.download="contratos_ufg_vigencias.csv";a.click();};
