@@ -38,7 +38,7 @@ em JSON:</p>
 https://contratos.comprasnet.gov.br/api/contrato/{id}/empenhos
 https://contratos.comprasnet.gov.br/api/contrato/{id}/responsaveis</pre>
 <p>O primeiro devolve a lista completa de contratos ativos da UG 153052 (UFG) numa chamada só, sem
-paginação — a resposta demora uns dois minutos. Os outros dois são consultados contrato a contrato:
+paginação; a resposta demora uns dois minutos. Os outros dois são consultados contrato a contrato:
 execução financeira e gestores/fiscais designados. A documentação da API está em
 <a href="https://contratos.comprasnet.gov.br/api/docs" rel="noopener" target="_blank">contratos.comprasnet.gov.br/api/docs</a>.</p>
 
@@ -48,15 +48,15 @@ constando como vencidos lá. O Comprasnet reflete o aditivo assim que ele entra 
 
 <h2>O que entra na base</h2>
 
-<p>Da lista de ativos da UG, ficam os registros com vigência final até 730 dias à frente — quem
+<p>Da lista de ativos da UG, ficam os registros com vigência final até 730 dias à frente, ou seja, quem
 vence nos próximos 24 meses. Daí decorre que:</p>
 <ul>
  <li>contrato ativo com a vigência já vencida há até 180 dias também entra, na faixa VERIFICAR
-     (roxa) — em geral é renovação cuja publicação do aditivo ainda não foi registrada; o card do
+     (roxa); em geral é renovação cuja publicação do aditivo ainda não foi registrada, e o card do
      quadro-resumo mostra essa faixa, que fica fora da lista principal;</li>
  <li>vencido há mais de 180 dias é tratado como encerrado sem baixa e fica de fora;</li>
  <li>contrato que vence depois dos 24 meses entra sozinho conforme a janela avança;</li>
- <li>notas de empenho com contratação real registrada entram por padrão — o filtro Instrumento
+ <li>notas de empenho com contratação real registrada entram por padrão; o filtro Instrumento
      separa contratos e NEs;</li>
  <li>número repetido na origem vira um registro só.</li>
 </ul>
@@ -65,7 +65,7 @@ vence nos próximos 24 meses. Daí decorre que:</p>
 <h2>Como a coleta roda</h2>
 
 <p>O <code>atualizar.py</code> faz uma chamada para a lista da UG e mais duas por contrato
-monitorado (empenhos e responsáveis) — cerca de 25 minutos no total. Se a lista da UG não vier em
+monitorado (empenhos e responsáveis), cerca de 25 minutos no total. Se a lista da UG não vier em
 quatro tentativas, a execução aborta sem gravar, para não publicar base pela metade. Falha pontual
 na consulta de um contrato não derruba a rodada: aquele contrato fica sem os campos de execução
 naquela posição, e o painel mostra isso como "sem dados".</p>
@@ -84,7 +84,7 @@ passado e mostrar como um contrato estava numa data específica.</p>
      esse campo.</li>
  <li><b>Empenhado, liquidado e pago:</b> somas de todos os empenhos do contrato, incluindo restos a
      pagar. Liquidado é o que aguarda pagamento. Como a soma acumula exercícios, o pago pode passar
-     o valor global da vigência atual — esperado, não é erro.</li>
+     o valor global da vigência atual; é esperado, não é erro.</li>
  <li><b>Gestor:</b> todos os designados como Gestor ativos no Comprasnet, separados por " / ". Sem
      gestor titular, aparece o substituto ou um fiscal, com a função entre parênteses.</li>
  <li><b>Fundação de apoio:</b> marcado quando a razão social contém "fundação". É identificação por
@@ -125,7 +125,7 @@ só acontece se a posição da coleta for anterior a algum registro feito depois
 
 <h2>Limitações</h2>
 
-<p>Gestor e fiscal só aparecem quando a designação está cadastrada no Comprasnet — hoje é o caso de
+<p>Gestor e fiscal só aparecem quando a designação está cadastrada no Comprasnet; hoje é o caso de
 uma minoria dos contratos da UG. Coluna Gestor vazia significa designação não registrada no
 sistema, o que é em si uma pendência a cobrar.</p>
 

@@ -55,7 +55,7 @@ def baixar():
 def preparar(ativos, hoje):
     """Contratos ativos com vigência final até JANELA_DIAS à frente.
     Inclui os vencidos há até VENCIDO_MAX_DIAS que seguem ativos (dias
-    negativos) — normalmente aditivo de renovação ainda não registrado.
+    negativos), normalmente aditivo de renovação ainda não registrado.
     Vencidos mais antigos são encerrados sem baixa e ficam de fora.
     Numero repetido (evento antigo + aditivo de renovação): fica o registro
     de vigência mais longa, independente da ordem em que a API devolve."""
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     if dados and achados < 0.9 * len(dados):
         raise SystemExit(
             f"Só {achados} de {len(dados)} contratos com execução obtida "
-            "(mínimo 90%) — abortando sem gravar dados.json")
+            "(mínimo 90%); abortando sem gravar dados.json")
     pacote = {"geradoEm": hoje.isoformat(), "orgao": ORGAO, "ug": UG,
               "contratos": dados}
     with open("dados.json", "w", encoding="utf-8") as f:
